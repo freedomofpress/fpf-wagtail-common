@@ -1,0 +1,60 @@
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+[project]
+name = "fpf-wagtail-common"
+dynamic = ["version"]
+description = "Shared Wagtail extensions for Freedom of the Press Foundation"
+authors = [{ name = "Freedom of the Press Foundation" }]
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "wagtail>=7.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/freedomofpress/fpf-wagtail-common"
+
+[tool.poetry]
+packages = [
+    { include = "fpfwagtailcommon" }
+]
+include = [
+    { path = "fpfwagtailcommon/**/static/**/*", format = ["sdist", "wheel"] }
+]
+
+[tool.poetry-dynamic-versioning]
+enable = true
+
+[tool.ruff]
+exclude = [
+    "node_modules",
+]
+
+[tool.ruff.lint]
+ignore = ["E501", "E266"]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+section-order = [
+    # the default, plus our Django and Wagtail sections
+    "future",
+    "standard-library",
+    "django",
+    "wagtail",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+
+[tool.ruff.lint.isort.sections]
+"django" = ["django"]
+"wagtail" = ["wagtail"]
+
+[tool.pre-commit-update.yaml]
+mapping = 2
+sequence = 4
+offset = 2

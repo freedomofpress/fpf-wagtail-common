@@ -1,0 +1,37 @@
+repos:
+  - repo: https://github.com/adamchainz/django-upgrade
+    rev: 1.30.0
+    hooks:
+      - id: django-upgrade
+        args: [--target-version, "5.2"]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+        name: Enforce end of file format
+        # Exclude SVG and generated static files
+        exclude: '\.svg$|^fpfwagtailcommon/[^/]+/static/'
+
+      - id: trailing-whitespace
+        name: Enforce removal of trailing whitespace
+        # Exclude generated static files
+        exclude: "^fpfwagtailcommon/[^/]+/static/"
+
+      - id: mixed-line-ending
+        args: [--fix=lf]
+        # Exclude generated static files
+        exclude: "^fpfwagtailcommon/[^/]+/static/"
+
+      - id: fix-byte-order-marker
+
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.15
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
