@@ -19,12 +19,15 @@ dependencies = [
 Homepage = "https://github.com/freedomofpress/fpf-wagtail-common"
 
 [tool.poetry]
+# Placeholder version.
+# poetry-dynamic-versioning overrides this at build time from git
 packages = [
     { include = "fpfwagtailcommon" }
 ]
 include = [
     { path = "fpfwagtailcommon/**/static/**/*", format = ["sdist", "wheel"] }
 ]
+version = "0.0.0"
 
 [tool.poetry-dynamic-versioning]
 enable = true
