@@ -1,0 +1,21 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+.ruff_cache/
+.venv/
+
+# Node dependencies
+node_modules
+
+# Coverage report
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Editors
+.vscode
+.zed

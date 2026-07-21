@@ -1,0 +1,42 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    permissions:
+      # Required to upload the built distributions to the release
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.3
+        with:
+          # poetry-dynamic-versioning needs the full history available
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install build tooling
+        run: pip install build
+
+      - name: Build wheel and sdist
+        run: python -m build
+
+      - name: Attach distributions to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/* --clobber
