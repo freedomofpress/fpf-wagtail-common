@@ -19,7 +19,7 @@
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "webpack": "^5.107.2",
-    "webpack-cli": "^7.0.3",
+    "webpack-cli": "^7.2.1",
     "webpack-merge": "^6.0.1"
   },
   "dependencies": {
