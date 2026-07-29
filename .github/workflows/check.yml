@@ -17,6 +17,9 @@ env:
 jobs:
   lint-actions:
     name: Lint:Actions
+    permissions:
+      contents: read
+      actions: read
     uses: freedomofpress/actionslib/.github/workflows/lint-actions.yaml@main
 
   lint:
