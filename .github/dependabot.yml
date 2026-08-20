@@ -28,3 +28,8 @@ updates:
       day: 'sunday'
     cooldown:
       default-days: 7
+    groups:
+      babel:
+        patterns:
+          - "@babel/*"
+
