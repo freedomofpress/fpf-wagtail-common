@@ -18,7 +18,7 @@
     "babel-loader": "^10.1.1",
     "jest": "^30.5.0",
     "jest-environment-jsdom": "^30.5.0",
-    "webpack": "^5.110.1",
+    "webpack": "^5.110.3",
     "webpack-cli": "^7.2.3",
     "webpack-merge": "^6.0.1"
   },
