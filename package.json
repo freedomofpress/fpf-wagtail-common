@@ -12,8 +12,8 @@
     "testEnvironment": "jsdom"
   },
   "devDependencies": {
-    "@babel/core": "^8.0.1",
-    "@babel/preset-env": "^8.0.2",
+    "@babel/core": "^8.0.5",
+    "@babel/preset-env": "^8.0.5",
     "babel-jest": "^30.5.1",
     "babel-loader": "^10.1.1",
     "jest": "^30.5.1",
