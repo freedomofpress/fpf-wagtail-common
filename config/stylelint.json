@@ -7,6 +7,12 @@
     "selector-class-pattern": null,
     "rule-empty-line-before": null,
     "color-function-notation": "legacy",
-    "alpha-value-notation": "number"
+    "alpha-value-notation": "number",
+    "custom-property-pattern": [
+      "^[a-z][a-z0-9]*(-[a-z0-9]+)*(--[0-9]+)?$",
+      {
+        "message": "kebab-case; --N negative step allowed (e.g. --font-step--3)"
+      }
+    ]
   }
 }
