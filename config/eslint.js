@@ -1,85 +1,91 @@
+const { defineConfig, globalIgnores } = require("eslint/config");
 const js = require("@eslint/js");
-const react = require("eslint-plugin-react");
-const reactHooks = require("eslint-plugin-react-hooks");
-const jsxA11y = require("eslint-plugin-jsx-a11y");
 const importPlugin = require("eslint-plugin-import");
-const prettier = require("eslint-config-prettier");
 const globals = require("globals");
 
 /**
- * @param {string[]} files - glob patterns for this project's JS/JSX source
- *   (varies per project, e.g. ["client/**\/*.js", "client/**\/*.jsx"])
+ * Baseline ESLint flat config shared by FPF Wagtail sites.
+ *
+ * @param {object} options
+ * @param {string[]} options.files - glob patterns for this project's
+ *   browser source, e.g. ["client/**\/*.{js,jsx}"]
+ * @param {boolean} [options.react=false] - enable React, JSX a11y and
+ *   React hooks rules (requires the eslint-plugin-react* and
+ *   eslint-plugin-jsx-a11y packages)
+ * @param {string[]} [options.ignores=[]] - extra project-specific ignores
+ * @param {string[]} [options.testFiles] - files that get Jest globals
+ * @returns {object[]} config objects to spread into defineConfig()
  */
-module.exports = function fpfEslintConfig(files) {
-	return [
-		{ files, ...js.configs.recommended },
-		{ files, ...react.configs.flat.recommended },
-		{ files, ...jsxA11y.flatConfigs.recommended },
-		{ files, ...importPlugin.flatConfigs.recommended },
-		{ files, ...prettier },
+module.exports = function fpfEslintConfig({
+	files,
+	react = false,
+	ignores = [],
+	testFiles = ["**/*.test.js"],
+}) {
+	const source = {
+		files,
+		extends: [js.configs.recommended, importPlugin.flatConfigs.recommended],
+		languageOptions: {
+			// eslint-plugin-import's recommended config sets ecmaVersion: 2018,
+			// which can't parse newer syntax such as optional chaining.
+			ecmaVersion: "latest",
+			globals: globals.browser,
+		},
+	};
+
+	if (react) {
+		// Required lazily so non-React projects don't need these installed.
+		const reactPlugin = require("eslint-plugin-react");
+		const reactHooks = require("eslint-plugin-react-hooks");
+		const jsxA11y = require("eslint-plugin-jsx-a11y");
+
+		source.extends.push(
+			reactPlugin.configs.flat.recommended,
+			jsxA11y.flatConfigs.recommended,
+			importPlugin.flatConfigs.react,
+		);
+		source.plugins = { "react-hooks": reactHooks };
+		source.settings = {
+			react: {
+				version: "detect",
+			},
+			"import/resolver": { node: { extensions: [".js", ".jsx"] } },
+		};
+		source.rules = {
+			"react-hooks/rules-of-hooks": "error",
+			"react-hooks/exhaustive-deps": "warn",
+
+			// prop-types is going away in React 19
+			"react/prop-types": "off",
+		};
+	}
+
+	return defineConfig([
+		globalIgnores(["build/", "**/coverage/", "htmlcov/", ".venv/", ...ignores]),
+
+		source,
 
 		{
-			files,
-
+			files: testFiles,
 			languageOptions: {
-				// eslint-plugin-import's recommended config hardcodes ecmaVersion: 2018,
-				// which is older than these projects' syntax (e.g. optional chaining).
-				// Override it back to the ESLint default so parsing doesn't regress.
-				ecmaVersion: "latest",
-				globals: {
-					...globals.browser,
-					// webpack injects a `module` binding into each bundled chunk for
-					// its Hot Module Replacement API (module.hot).
-					module: "readonly",
-					// Matomo/Piwik's tracking snippet defines this on `window` before
-					// our bundles run.
-					_paq: "readonly",
-				},
-			},
-
-			settings: {
-				react: {
-					version: "detect",
-				},
-				"import/resolver": {
-					webpack: {
-						config: {
-							extensions: [".js", ".jsx"],
-						},
-					},
-				},
-			},
-
-			plugins: {
-				"react-hooks": reactHooks,
-			},
-
-			rules: {
-				"react-hooks/rules-of-hooks": "error",
-				"react-hooks/exhaustive-deps": "warn",
-
-				// Allow a leading underscore to mark a parameter as intentionally
-				// unused, e.g. one kept only for signature consistency with sibling
-				// callback functions.
-				"no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-
-				// webpack.config.js in these projects only populates module.exports
-				// when run via the build/start npm scripts (it branches on
-				// npm_lifecycle_event), so requiring it here (e.g. from
-				// eslint-import-resolver-webpack) yields an empty config and can't
-				// actually resolve aliases or extension-less imports. Leave path
-				// resolution unchecked until that export is restructured.
-				"import/no-unresolved": "off",
+				globals: globals.jest,
 			},
 		},
 
 		{
-			files: ["**/*.test.js"],
+			// Build tool configs at the repo root, which run in Node.
+			files: ["*.config.{js,mjs}"],
+			extends: [js.configs.recommended],
 			languageOptions: {
-				globals: {
-					...globals.jest,
-				},
+				globals: globals.node,
 			},
 		},
-	];
+
+		{
+			files: ["*.config.js"],
+			languageOptions: {
+				sourceType: "commonjs",
+			},
+		},
+	]);
 };
