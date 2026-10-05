@@ -4,7 +4,7 @@ Shared Wagtail extensions for the Freedom of the Press Foundation Wagtail sites.
 
 - [`fpfwagtailcommon.curlify`](#curlify) — a Draftail rich-text feature
   (`curlify`) that converts straight quotes to curly quotes.
-- [Shared lint configs](#shared-lint-configs) — baseline ESLint, Stylelint and
+- [Shared configs](#shared-configs) — baseline webpack, ESLint, Stylelint and
   Prettier configs for the sites.
 
 ## Curlify
@@ -30,7 +30,7 @@ WAGTAILADMIN_RICH_TEXT_EDITORS = {
 }
 ```
 
-## Shared lint configs
+## Shared configs
 
 Install the package from a tag as an npm devDependency:
 
@@ -38,8 +38,9 @@ Install the package from a tag as an npm devDependency:
 "fpf-wagtail-common": "github:freedomofpress/fpf-wagtail-common#v0.2.0"
 ```
 
-The linters themselves are optional peer dependencies, so each site keeps
-installing its own `eslint`, `stylelint`, `prettier` and plugins.
+The tools themselves are optional peer dependencies, so each site keeps
+installing its own webpack and loaders, `eslint`, `stylelint`, `prettier` and
+plugins.
 
 The configs are looked up from the site's own `node_modules`, so pre-commit
 hooks only find them after `npm ci`; listing this package under a hook's
@@ -72,6 +73,23 @@ module.exports = defineConfig([
 		ignores: ["static/"],
 	}),
 ]);
+```
+
+**webpack** — `config/webpack.js` exports a function taking the site's options
+and returning a webpack config function. It assumes the shared layout: sources
+in `client/`, and bundles plus `webpack-stats.json` written to
+`build/static/bundles/`, served by a `build` Django app. Run webpack with
+`--config-node-env production` or `development`.
+
+```js
+const fpfWebpackConfig = require("fpf-wagtail-common/config/webpack.js");
+
+module.exports = fpfWebpackConfig({
+	rootDir: __dirname,
+	entry: { common: "client/common/js/common.js" },
+	sassLoadPaths: ["client/common/scss/"], // optional; node_modules is included
+	sassAdditionalData: '$static-url: "/static/";', // optional
+});
 ```
 
 ## Releases and using downstream

@@ -27,18 +27,31 @@
   },
   "peerDependencies": {
     "@eslint/js": "^9.39.5",
+    "babel-loader": "^10.1.1",
+    "css-loader": "^7.1.4",
     "eslint": "^9.39.5",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.12.0",
+    "mini-css-extract-plugin": "^2.6.1",
     "prettier": "^3.9.9",
+    "sass": "^1.102.0",
+    "sass-loader": "^17.0.0",
     "stylelint": "^17.0.0",
-    "stylelint-config-standard-scss": "^17.0.0"
+    "stylelint-config-standard-scss": "^17.0.0",
+    "webpack": "^5.111.1",
+    "webpack-bundle-tracker": "^3.2.4"
   },
   "peerDependenciesMeta": {
     "@eslint/js": {
+      "optional": true
+    },
+    "babel-loader": {
+      "optional": true
+    },
+    "css-loader": {
       "optional": true
     },
     "eslint": {
@@ -59,13 +72,28 @@
     "globals": {
       "optional": true
     },
+    "mini-css-extract-plugin": {
+      "optional": true
+    },
     "prettier": {
+      "optional": true
+    },
+    "sass": {
+      "optional": true
+    },
+    "sass-loader": {
       "optional": true
     },
     "stylelint": {
       "optional": true
     },
     "stylelint-config-standard-scss": {
+      "optional": true
+    },
+    "webpack": {
+      "optional": true
+    },
+    "webpack-bundle-tracker": {
       "optional": true
     }
   }
