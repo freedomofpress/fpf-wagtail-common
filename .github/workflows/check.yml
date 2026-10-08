@@ -36,6 +36,16 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # ESLint resolves imports against node_modules
+      - name: Install dependencies
+        run: npm ci
+
       - name: Install pre-commit
         run: pip install pre-commit
 

@@ -10,12 +10,12 @@ repos:
       - id: trailing-whitespace
         name: Enforce removal of trailing whitespace
         # Exclude generated static files
-        exclude: "^fpfwagtailcommon/[^/]+/static/"
+        exclude: '^fpfwagtailcommon/[^/]+/static/'
 
       - id: mixed-line-ending
         args: [--fix=lf]
         # Exclude generated static files
-        exclude: "^fpfwagtailcommon/[^/]+/static/"
+        exclude: '^fpfwagtailcommon/[^/]+/static/'
 
       - id: fix-byte-order-marker
 
@@ -29,3 +29,25 @@ repos:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.39.1
+    hooks:
+      - id: eslint
+        files: \.(jsx?|mjs)$
+        types: [file]
+        # Exclude generated static files
+        exclude: '^fpfwagtailcommon/[^/]+/static/'
+        additional_dependencies:
+          - eslint@9.39.5
+          - '@eslint/js@9.39.5'
+          - eslint-plugin-import@2.32.0
+          - globals@17.13.0
+
+  - repo: https://github.com/JoC0de/pre-commit-prettier
+    rev: v3.9.9
+    hooks:
+      - id: prettier
+        files: \.(jsx?|mjs)$
+        # Exclude generated static files
+        exclude: '^fpfwagtailcommon/[^/]+/static/'
