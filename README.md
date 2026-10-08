@@ -4,6 +4,8 @@ Shared Wagtail extensions for the Freedom of the Press Foundation Wagtail sites.
 
 - [`fpfwagtailcommon.curlify`](#curlify) — a Draftail rich-text feature
   (`curlify`) that converts straight quotes to curly quotes.
+- [Shared configs](#shared-configs) — baseline webpack, ESLint, Stylelint and
+  Prettier configs for the sites.
 
 ## Curlify
 
@@ -26,6 +28,72 @@ WAGTAILADMIN_RICH_TEXT_EDITORS = {
         "OPTIONS": {"features": ["bold", "italic", "link", "curlify"]},
     },
 }
+```
+
+## Shared configs
+
+Install the package from a tag as an npm devDependency:
+
+```json
+"fpf-wagtail-common": "github:freedomofpress/fpf-wagtail-common#v0.2.0"
+```
+
+The tools themselves are optional peer dependencies, so each site keeps
+installing its own webpack and loaders, `eslint`, `stylelint`, `prettier` and
+plugins.
+
+The configs are looked up from the site's own `node_modules`, so pre-commit
+hooks only find them after `npm ci`; listing this package under a hook's
+`additional_dependencies` is not enough.
+
+**Prettier** — in `package.json`:
+
+```json
+"prettier": "fpf-wagtail-common/config/prettier.json"
+```
+
+**Stylelint** — in `.stylelintrc.json`:
+
+```json
+{ "extends": ["fpf-wagtail-common/config/stylelint.json"] }
+```
+
+**ESLint** — `config/eslint.js` exports a function returning flat config
+objects; spread them into `defineConfig()` and add site-specific overrides
+after them:
+
+```js
+const { defineConfig } = require("eslint/config");
+const fpfEslintConfig = require("fpf-wagtail-common/config/eslint.js");
+
+module.exports = defineConfig([
+	...fpfEslintConfig({
+		files: ["client/**/*.{js,jsx}"],
+		react: true, // needs eslint-plugin-react, -react-hooks and -jsx-a11y
+		ignores: ["static/"],
+	}),
+]);
+```
+
+**webpack** — `config/webpack.js` exports a function taking the site's options
+and returning a webpack config. By default Babel transpiles `client/` and
+bundles are written to `build/static/bundles/`; `webpack-stats.json` goes in the
+site's root. SCSS is compiled by `sass-loader` and emitted by webpack's built-in
+CSS support. Run webpack with `--config-node-env production` or `development`,
+which sets both webpack's mode and Babel's env.
+
+```js
+const fpfWebpackConfig = require("fpf-wagtail-common/config/webpack.js");
+
+module.exports = {
+	...fpfWebpackConfig({
+		rootDir: __dirname,
+		entry: { common: "./client/common/js/common.js" },
+		srcDir: "client", // optional
+		outputDir: "build/static/bundles", // optional
+	}),
+	// Site-specific settings, e.g. externals, go here.
+};
 ```
 
 ## Releases and using downstream
