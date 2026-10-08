@@ -1,130 +1,64 @@
 const path = require("path");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const BundleTracker = require("webpack-bundle-tracker");
 
 /**
  * Baseline webpack config shared by FPF Wagtail sites.
  *
- * Sources live in client/. Bundles and webpack-stats.json are written to
- * build/static/bundles/, which each site's `build` Django app serves at
- * /static/bundles/.
+ * Run webpack with --config-node-env production or development: it sets
+ * NODE_ENV, from which webpack takes its mode and Babel its env, so production
+ * builds don't get dev/debug JSX transforms.
+ *
+ * SCSS is compiled by sass-loader and emitted as CSS files by webpack's
+ * built-in CSS support. webpack-stats.json is written to the site's root
+ * directory for django-webpack-loader.
  *
  * @param {object} options
  * @param {string} options.rootDir - the site's root directory (its __dirname)
- * @param {Object<string, string>} options.entry - bundle name to entry file,
- *   relative to rootDir, e.g. { common: "client/common/js/common.js" }
- * @param {string[]} [options.sassLoadPaths=[]] - extra Sass load paths,
- *   relative to rootDir; node_modules is always included
- * @param {string} [options.sassAdditionalData] - Sass prepended to every file
- * @returns {Function} config function for webpack, `(env, argv) => config`
+ * @param {object} options.entry - webpack entries, relative to rootDir,
+ *   e.g. { common: "./client/common/js/common.js" }
+ * @param {string} [options.srcDir="client"] - directory Babel transpiles,
+ *   relative to rootDir
+ * @param {string} [options.outputDir="build/static/bundles"] - directory
+ *   bundles are written to, relative to rootDir
+ * @returns {object} webpack config
  */
 module.exports = function fpfWebpackConfig({
 	rootDir,
 	entry,
-	sassLoadPaths = [],
-	sassAdditionalData,
+	srcDir = "client",
+	outputDir = "build/static/bundles",
 }) {
-	const srcDir = path.join(rootDir, "client");
-	const distDir = path.join(rootDir, "build", "static", "bundles");
+	return {
+		context: rootDir,
 
-	// A function so the config is defined whenever it's loaded.
-	return (env, argv) => {
-		// The npm scripts pass --config-node-env, which sets NODE_ENV in the Node
-		// process. Use an explicit --mode if given, else NODE_ENV, else webpack's
-		// own default, and set `mode` below so this config and webpack agree.
-		const mode =
-			argv.mode ??
-			(process.env.NODE_ENV === "development" ? "development" : "production");
-		const isProd = mode === "production";
+		entry,
 
-		// In the bundles themselves, webpack replaces process.env.NODE_ENV based
-		// on `mode` (optimization.nodeEnv), so no DefinePlugin is needed.
-		return {
-			mode,
+		output: {
+			path: path.resolve(rootDir, outputDir),
+			filename: "[name]-[contenthash].js",
+			clean: true,
+		},
 
-			// Each key is a separate JS (and extracted CSS) bundle.
-			entry: Object.fromEntries(
-				Object.entries(entry).map(([name, file]) => [
-					name,
-					path.resolve(rootDir, file),
-				]),
-			),
+		resolve: {
+			extensions: [".js", ".jsx"],
+		},
 
-			// In production, file names get a content hash; in development they
-			// are just the entry key. `clean` empties the output directory before
-			// each build so dev bundles don't linger alongside production ones.
-			output: {
-				path: distDir,
-				filename: isProd ? "[name]-[contenthash].js" : "[name].js",
-				clean: true,
-			},
-
-			resolve: {
-				extensions: [".js", ".jsx"],
-			},
-
-			module: {
-				rules: [
-					{
-						// All other Babel settings belong in the site's babel.config.js.
-						test: /\.jsx?$/,
-						loader: "babel-loader",
-						// Babel picks its env from NODE_ENV, which --mode alone doesn't set.
-						// Pin it to the resolved mode so preset-react never emits jsxDEV
-						// calls, which the production React runtime lacks.
-						options: { envName: mode },
-						include: [srcDir],
-					},
-					{
-						test: /\.scss$/,
-						use: [
-							MiniCssExtractPlugin.loader,
-							"css-loader",
-							{
-								loader: "sass-loader",
-								options: {
-									sassOptions: {
-										loadPaths: [
-											path.join(rootDir, "node_modules"),
-											...sassLoadPaths.map((p) => path.resolve(rootDir, p)),
-										],
-										// Stops Sass adding a byte-order mark to CSS containing
-										// non-ASCII characters. webpack concatenates these
-										// fragments, so a BOM can end up invalidating selectors.
-										charset: false,
-									},
-									...(sassAdditionalData === undefined
-										? {}
-										: { additionalData: sassAdditionalData }),
-								},
-							},
-						],
-					},
-					{
-						test: /\.css$/,
-						use: [MiniCssExtractPlugin.loader, "css-loader"],
-					},
-					{
-						test: /\.(png|svg|jpg|gif)$/,
-						type: "asset/resource",
-					},
-					{
-						test: /\.(woff|woff2|eot|ttf|otf)$/,
-						type: "asset/resource",
-					},
-				],
-			},
-
-			plugins: [
-				new MiniCssExtractPlugin({
-					filename: isProd ? "[name]-[contenthash].css" : "[name].css",
-					chunkFilename: isProd ? "[id]-[contenthash].css" : "[id].css",
-				}),
-				new BundleTracker({
-					path: distDir,
-					filename: "webpack-stats.json",
-				}),
+		module: {
+			rules: [
+				{
+					// Babel settings belong in the site's babel.config.js.
+					test: /\.jsx?$/,
+					loader: "babel-loader",
+					include: path.resolve(rootDir, srcDir),
+				},
+				{
+					test: /\.scss$/,
+					type: "css",
+					loader: "sass-loader",
+				},
 			],
-		};
+		},
+
+		plugins: [new BundleTracker({ path: rootDir })],
 	};
 };

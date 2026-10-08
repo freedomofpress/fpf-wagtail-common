@@ -76,20 +76,24 @@ module.exports = defineConfig([
 ```
 
 **webpack** — `config/webpack.js` exports a function taking the site's options
-and returning a webpack config function. It assumes the shared layout: sources
-in `client/`, and bundles plus `webpack-stats.json` written to
-`build/static/bundles/`, served by a `build` Django app. Run webpack with
-`--config-node-env production` or `development`.
+and returning a webpack config. By default Babel transpiles `client/` and
+bundles are written to `build/static/bundles/`; `webpack-stats.json` goes in the
+site's root. SCSS is compiled by `sass-loader` and emitted by webpack's built-in
+CSS support. Run webpack with `--config-node-env production` or `development`,
+which sets both webpack's mode and Babel's env.
 
 ```js
 const fpfWebpackConfig = require("fpf-wagtail-common/config/webpack.js");
 
-module.exports = fpfWebpackConfig({
-	rootDir: __dirname,
-	entry: { common: "client/common/js/common.js" },
-	sassLoadPaths: ["client/common/scss/"], // optional; node_modules is included
-	sassAdditionalData: '$static-url: "/static/";', // optional
-});
+module.exports = {
+	...fpfWebpackConfig({
+		rootDir: __dirname,
+		entry: { common: "./client/common/js/common.js" },
+		srcDir: "client", // optional
+		outputDir: "build/static/bundles", // optional
+	}),
+	// Site-specific settings, e.g. externals, go here.
+};
 ```
 
 ## Releases and using downstream
