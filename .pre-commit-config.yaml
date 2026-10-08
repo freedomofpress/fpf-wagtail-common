@@ -34,8 +34,7 @@ repos:
     rev: v9.39.1
     hooks:
       - id: eslint
-        files: \.(jsx?|mjs)$
-        types: [file]
+        files: \.js$
         # Exclude generated static files
         exclude: '^fpfwagtailcommon/[^/]+/static/'
         additional_dependencies:
@@ -48,6 +47,6 @@ repos:
     rev: v3.9.9
     hooks:
       - id: prettier
-        files: \.(jsx?|mjs)$
+        files: \.js$
         # Exclude generated static files
         exclude: '^fpfwagtailcommon/[^/]+/static/'
