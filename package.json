@@ -92,5 +92,6 @@
     "webpack-bundle-tracker": {
       "optional": true
     }
-  }
+  },
+  "prettier": "./config/prettier.json"
 }
