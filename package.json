@@ -4,9 +4,10 @@
   "description": "Shared Wagtail extensions for Freedom of the Press Foundation",
   "private": true,
   "scripts": {
-    "build": "webpack --mode production",
-    "start": "webpack watch --mode development --devtool eval-source-map",
-    "test": "jest"
+    "build": "webpack --config-node-env production",
+    "start": "webpack watch --config-node-env development --devtool eval-source-map",
+    "test": "jest",
+    "js-lint": "eslint ."
   },
   "jest": {
     "testEnvironment": "jsdom"
@@ -14,13 +15,16 @@
   "devDependencies": {
     "@babel/core": "^8.0.6",
     "@babel/preset-env": "^8.0.6",
+    "@eslint/js": "^9.39.5",
     "babel-jest": "^30.5.1",
     "babel-loader": "^10.1.1",
+    "eslint": "^9.39.5",
+    "eslint-plugin-import": "^2.32.0",
+    "globals": "^17.13.0",
     "jest": "^30.5.2",
     "jest-environment-jsdom": "^30.5.2",
     "webpack": "^5.111.1",
-    "webpack-cli": "^7.2.3",
-    "webpack-merge": "^6.0.1"
+    "webpack-cli": "^7.2.3"
   },
   "dependencies": {
     "smartquotes": "^2.3.2"
@@ -88,5 +92,6 @@
     "webpack-bundle-tracker": {
       "optional": true
     }
-  }
+  },
+  "prettier": "./config/prettier.json"
 }
