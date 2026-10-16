@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -78,7 +79,29 @@ class SanitizeBaseCommand(BaseCommand):
             help="Skip app or app.Model from the profile's mangle_tables",
         )
 
+    def sanitization_allowed(self) -> bool:
+        """Whether this environment has allows in-place sanitization
+
+        Subclasses may override this to use different checks.
+        """
+        value = os.environ.get("ALLOW_DB_SANITIZE", "")
+        if value.lower().strip() in ("1", "true", "yes"):
+            return True
+
+        self.stderr.write(
+            "Set ALLOW_DB_SANITIZE=1 to confirm this is a disposable environment "
+            "where the database can be modified in place."
+        )
+        return False
+
     def handle(self, *args, **options):
+        # Refuse to run anywhere but an environment explicitly set up for
+        # sanitization
+        if not self.sanitization_allowed():
+            raise CommandError(
+                "Database sanitization is not allowed in this environment."
+            )
+
         # Ensure that subclasses provide a profile, so this cannot be run
         # unintentionally
         if self.profile is None:

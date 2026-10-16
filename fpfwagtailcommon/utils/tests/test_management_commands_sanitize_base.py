@@ -1,3 +1,4 @@
+import os
 from argparse import ArgumentTypeError
 from io import StringIO
 from unittest import mock
@@ -73,6 +74,10 @@ class SanitizeCommandSubclass(SanitizeBaseCommand):
 
 class SanitizeBaseCommandTests(TestCase):
     def setUp(self):
+        patcher = mock.patch.dict(os.environ, {"ALLOW_DB_SANITIZE": "1"})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
         self.user = User.objects.create_user("alice", email="alice@example.com")
         Session.objects.create(
             session_key="abc", session_data="", expire_date=timezone.now()
@@ -82,6 +87,41 @@ class SanitizeBaseCommandTests(TestCase):
         self.stdout = StringIO()
         self.stderr = StringIO()
         call_command(command(), *args, stdout=self.stdout, stderr=self.stderr)
+
+    def test_requires_env_var(self):
+        for value in (None, "", "0", "false", "no"):
+            env = {} if value is None else {"ALLOW_DB_SANITIZE": value}
+            with (
+                self.subTest(value=value),
+                mock.patch.dict(os.environ, env, clear=True),
+                self.assertRaisesMessage(CommandError, "not allowed"),
+            ):
+                self.run_command("--yes", "-r", "user=x")
+            self.assertIn("ALLOW_DB_SANITIZE=1", self.stderr.getvalue())
+
+        # Nothing changed
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "alice@example.com")
+        self.assertTrue(Session.objects.exists())
+
+    def test_sanitization_allowed(self):
+        for value in ("1", "true", "True", "yes", " YES "):
+            with (
+                self.subTest(value=value),
+                mock.patch.dict(os.environ, {"ALLOW_DB_SANITIZE": value}),
+            ):
+                self.assertTrue(SanitizeCommandSubclass().sanitization_allowed())
+
+    def test_sanitization_allowed_override(self):
+        class AlwaysAllowed(SanitizeCommandSubclass):
+            def sanitization_allowed(self):
+                return True
+
+        with mock.patch.dict(os.environ, clear=True):
+            self.run_command("--yes", "-r", "user=x", command=AlwaysAllowed)
+
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "x@invalid")
 
     def test_requires_profile(self):
         with self.assertRaisesMessage(CommandError, "profile"):
