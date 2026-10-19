@@ -1,6 +1,15 @@
 import * as curlify from './curlify'
 
 (function (draftail, DraftJS) {
+	if (!draftail || !DraftJS) return
+
+	// This file can be evaluated more than once per page (e.g. when a chooser
+	// modal's form includes the Draftail widget's media). The re-run sees a
+	// window.DraftJS from a second copy of Draft.js, so it must not replace the
+	// plugin registered on page load.
+	if (draftail.__curlifyRegistered) return
+	draftail.__curlifyRegistered = true
+
 	const HANDLED = 'handled'
 	const NOT_HANDLED = 'not-handled'
 
