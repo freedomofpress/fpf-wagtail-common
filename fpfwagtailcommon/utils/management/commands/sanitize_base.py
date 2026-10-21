@@ -80,7 +80,7 @@ class SanitizeBaseCommand(BaseCommand):
         )
 
     def sanitization_allowed(self) -> bool:
-        """Whether this environment has allows in-place sanitization
+        """Whether this environment allows in-place sanitization
 
         Subclasses may override this to use different checks.
         """
