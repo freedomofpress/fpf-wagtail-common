@@ -31,7 +31,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v7.0.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -51,7 +51,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Node
+      - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -72,16 +72,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Python
-        uses: actions/setup-python@v7.0.0
+      - name: Setup Poetry
+        uses: freedomofpress/actionslib/act/poetry@main
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install Poetry
-        run: pip install poetry
-
-      - name: Install dependencies
-        run: poetry install
+          groups: dev
 
       - name: Run tests
         run: poetry run python runtests.py
@@ -95,7 +90,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Node
+      - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
