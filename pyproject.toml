@@ -12,7 +12,7 @@ license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "wagtail>=7.4",
+    "wagtail>=7.4,<8",
 ]
 
 [project.urls]
@@ -61,3 +61,8 @@ section-order = [
 mapping = 2
 sequence = 4
 offset = 2
+
+[dependency-groups]
+dev = [
+    "django (>=5.2,<5.3)"
+]
