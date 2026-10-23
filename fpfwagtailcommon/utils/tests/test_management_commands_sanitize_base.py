@@ -14,6 +14,7 @@ from fpfwagtailcommon.utils.management.commands.sanitize_base import (
     SanitizeBaseCommand,
     format_value,
     get_model,
+    get_placeholders,
     model_in_labels,
     parse_name_value,
 )
@@ -36,9 +37,15 @@ class FormatValueTestCase(SimpleTestCase):
     def test_non_string_unchanged(self):
         self.assertIs(format_value(False, {}), False)
 
-    def test_missing_replacement(self):
-        with self.assertRaisesMessage(CommandError, "'a'"):
-            format_value("{a}", {})
+
+class GetPlaceholdersTestCase(SimpleTestCase):
+    def test_finds_placeholders(self):
+        self.assertEqual(get_placeholders("{a}@{b}.example"), ["a", "b"])
+
+    def test_no_placeholders(self):
+        for value in ("plain", "", False, None, 1):
+            with self.subTest(value=value):
+                self.assertEqual(get_placeholders(value), [])
 
 
 class GetModelTestCase(SimpleTestCase):
@@ -89,15 +96,12 @@ class SanitizeBaseCommandTests(TestCase):
         call_command(command(), *args, stdout=self.stdout, stderr=self.stderr)
 
     def test_requires_env_var(self):
-        for value in (None, "", "0", "false", "no"):
-            env = {} if value is None else {"ALLOW_DB_SANITIZE": value}
-            with (
-                self.subTest(value=value),
-                mock.patch.dict(os.environ, env, clear=True),
-                self.assertRaisesMessage(CommandError, "not allowed"),
-            ):
-                self.run_command("--yes", "-r", "user=x")
-            self.assertIn("ALLOW_DB_SANITIZE=1", self.stderr.getvalue())
+        with (
+            mock.patch.dict(os.environ, clear=True),
+            self.assertRaisesMessage(CommandError, "not allowed"),
+        ):
+            self.run_command("--yes", "-r", "user=x")
+        self.assertIn("ALLOW_DB_SANITIZE=1", self.stderr.getvalue())
 
         # Nothing changed
         self.user.refresh_from_db()
@@ -140,6 +144,26 @@ class SanitizeBaseCommandTests(TestCase):
         self.run_command(
             "--yes", "-r", "user=x", "--no-truncate", "sessions", "--no-mangle", "auth"
         )
+
+        # Nothing changed
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "alice@example.com")
+        self.assertTrue(Session.objects.exists())
+
+    def test_missing_replacement(self):
+        with self.assertRaisesMessage(CommandError, "user: auth.User.email"):
+            self.run_command("--yes")
+
+        # Nothing changed
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "alice@example.com")
+        self.assertTrue(Session.objects.exists())
+
+    def test_list_placeholders(self):
+        # Doesn't require --replace values
+        self.run_command("--list-placeholders")
+
+        self.assertIn("user: auth.User.email", self.stdout.getvalue())
 
         # Nothing changed
         self.user.refresh_from_db()

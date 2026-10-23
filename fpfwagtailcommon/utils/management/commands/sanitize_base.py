@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import string
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -78,6 +79,15 @@ class SanitizeBaseCommand(BaseCommand):
             metavar="LABEL",
             help="Skip app or app.Model from the profile's mangle_tables",
         )
+        parser.add_argument(
+            "-l",
+            "--list-placeholders",
+            action="store_true",
+            help=(
+                "List {NAME} placeholders in the profile's mangle_tables that "
+                "need --replace values. Does not modify the database."
+            ),
+        )
 
     def sanitization_allowed(self) -> bool:
         """Whether this environment allows in-place sanitization
@@ -111,13 +121,10 @@ class SanitizeBaseCommand(BaseCommand):
         no_truncate = options["no_truncate"]
         no_mangle = options["no_mangle"]
 
-        # Resolve labels and fill placeholders up front so we can fail early
+        # Resolve labels up front so we can fail early
         truncate_models = [get_model(label) for label in self.profile.truncate_tables]
         mangle_models = {
-            get_model(label): {
-                name: format_value(value, replacements)
-                for name, value in updates.items()
-            }
+            get_model(label): updates
             for label, updates in self.profile.mangle_tables.items()
         }
 
@@ -130,6 +137,31 @@ class SanitizeBaseCommand(BaseCommand):
             model: updates
             for model, updates in mangle_models.items()
             if not model_in_labels(model, no_mangle)
+        }
+
+        fields_by_placeholder = get_fields_by_placeholder(mangle_models)
+        if options["list_placeholders"]:
+            self.list_placeholders(fields_by_placeholder)
+            return
+
+        # Check for every missing placeholder value before anything is
+        # modified so we can fail early, reporting them all at once.
+        missing = {
+            placeholder: fields
+            for placeholder, fields in fields_by_placeholder.items()
+            if placeholder not in replacements
+        }
+        if missing:
+            raise CommandError(
+                "Missing --replace values for:\n" + format_placeholders(missing)
+            )
+
+        mangle_models = {
+            model: {
+                name: format_value(value, replacements)
+                for name, value in updates.items()
+            }
+            for model, updates in mangle_models.items()
         }
 
         if not options["confirm"]:
@@ -162,6 +194,15 @@ class SanitizeBaseCommand(BaseCommand):
 
         self.stdout.write("Sanitization complete.")
 
+    def list_placeholders(self, fields_by_placeholder: dict[str, list[str]]):
+        """Write out placeholders and the fields that use them"""
+        if not fields_by_placeholder:
+            self.stdout.write("The sanitization profile has no placeholders.")
+            return
+
+        self.stdout.write("Placeholders to fill with --replace NAME=VALUE:")
+        self.stdout.write(format_placeholders(fields_by_placeholder))
+
 
 def parse_name_value(item: str) -> tuple[str, str]:
     """Parse a NAME=VALUE command-line argument"""
@@ -173,13 +214,48 @@ def parse_name_value(item: str) -> tuple[str, str]:
 
 
 def format_value(value: Any, replacements: dict[str, str]) -> Any:
-    """Fill {name} placeholders in a string mangle value"""
+    """Fill {name} placeholders in a string mangle value
+
+    Callers should check for missing replacements with get_fields_by_placeholder.
+    """
     if not isinstance(value, str):
         return value
-    try:
-        return value.format_map(replacements)
-    except KeyError as e:
-        raise CommandError(f"Missing --replace value for {e}.")
+
+    return value.format_map(replacements)
+
+
+def get_placeholders(value: Any) -> list[str]:
+    """Return the {name} placeholders in a string mangle value"""
+    if not isinstance(value, str):
+        return []
+
+    return [
+        name for _, name, _, _ in string.Formatter().parse(value) if name is not None
+    ]
+
+
+def get_fields_by_placeholder(
+    mangle_models: dict[type[Model], dict[str, Any]],
+) -> dict[str, list[str]]:
+    """Map each placeholder in mangle_models to the app_label.Model.field it's in"""
+    fields_by_placeholder: dict[str, list[str]] = {}
+
+    for model, updates in mangle_models.items():
+        for name, value in updates.items():
+            for placeholder in get_placeholders(value):
+                fields_by_placeholder.setdefault(placeholder, []).append(
+                    f"{model._meta.label}.{name}"
+                )
+
+    return fields_by_placeholder
+
+
+def format_placeholders(fields_by_placeholder: dict[str, list[str]]) -> str:
+    """Format placeholders and their fields as an indented list"""
+    return "\n".join(
+        f"  {placeholder}: {', '.join(fields)}"
+        for placeholder, fields in sorted(fields_by_placeholder.items())
+    )
 
 
 def get_model(label: str) -> type[Model]:
