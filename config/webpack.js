@@ -1,7 +1,7 @@
 const path = require("path");
 const BundleTracker = require("webpack-bundle-tracker");
 
-/** Baseline webpack config for FPF Wagtail sites; see the README for options. */
+/** Baseline webpack config for FPF Wagtail sites. */
 module.exports = function fpfWebpackConfig({
 	rootDir,
 	entry,

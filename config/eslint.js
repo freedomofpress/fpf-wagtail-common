@@ -3,7 +3,7 @@ const js = require("@eslint/js");
 const importPlugin = require("eslint-plugin-import");
 const globals = require("globals");
 
-/** Baseline ESLint flat config for FPF Wagtail sites; see the README for options. */
+/** Baseline ESLint flat config for FPF Wagtail sites. */
 module.exports = function fpfEslintConfig({
 	files,
 	react = false,
