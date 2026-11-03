@@ -8,7 +8,7 @@ module.exports = function fpfEslintConfig({
 	files,
 	react = false,
 	ignores = [],
-	testFiles = ["**/*.test.js"],
+	testFiles = [],
 }) {
 	return defineConfig([
 		globalIgnores(["build/", "**/coverage/", "htmlcov/", ".venv/", ...ignores]),
@@ -27,7 +27,7 @@ module.exports = function fpfEslintConfig({
 		...(react ? [reactConfig(files)] : []),
 
 		{
-			files: testFiles,
+			files: ["**/*.test.js", ...testFiles],
 			languageOptions: {
 				globals: globals.jest,
 			},
