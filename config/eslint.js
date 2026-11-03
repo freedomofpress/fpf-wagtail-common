@@ -11,7 +11,14 @@ module.exports = function fpfEslintConfig({
 	testFiles = [],
 }) {
 	return defineConfig([
-		globalIgnores(["build/", "**/coverage/", "htmlcov/", ".venv/", ...ignores]),
+		globalIgnores([
+			"build/",
+			"static/",
+			"**/coverage/",
+			"htmlcov/",
+			".venv/",
+			...ignores,
+		]),
 
 		{
 			files,
